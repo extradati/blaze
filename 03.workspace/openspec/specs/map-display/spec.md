@@ -7,11 +7,15 @@ Defines the behavior of rendering a full-screen OpenStreetMap map in a mobile-fi
 ## Requirements
 
 ### Requirement: Full-screen map rendering
-The system SHALL render a full-screen OpenStreetMap map that fills the entire viewport on mobile and desktop devices.
+The system SHALL render a full-screen OpenStreetMap map that fills the available viewport on mobile and desktop devices, sharing viewport ownership with a visible empty Ionic header and a visible empty Ionic footer.
 
 #### Scenario: Map fills viewport
 - **WHEN** the application loads on a mobile device
 - **THEN** the map container occupies 100% of the viewport width and height
+
+#### Scenario: Map renders alongside Ionic header and footer
+- **WHEN** the application loads with Ionic custom elements registered and the Leaflet map initialized
+- **THEN** the map occupies the viewport space not taken by the Ionic header and footer
 
 ### Requirement: OpenStreetMap tile loading
 The system SHALL load map tiles from OpenStreetMap's raster tile service.
