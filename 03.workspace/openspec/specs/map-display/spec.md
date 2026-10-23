@@ -21,14 +21,14 @@ The system SHALL load map tiles from OpenStreetMap's raster tile service.
 - **THEN** OSM tiles load and display within the map container
 
 ### Requirement: Map attribution
-The system SHALL display OpenStreetMap attribution as required by the tile provider's terms.
+The system SHALL NOT render OpenStreetMap attribution on the map interface; attribution is provided in a separate app section instead.
 
-#### Scenario: Attribution visible
+#### Scenario: No map attribution
 - **WHEN** the map is rendered
-- **THEN** OpenStreetMap attribution text appears on the map
+- **THEN** no OpenStreetMap attribution text appears on the map
 
 ### Requirement: Map controls
-The system SHALL provide visible and functional Leaflet controls for zoom and attribution.
+The system SHALL provide visible and functional Leaflet controls for zoom only; the attribution control is removed.
 
 #### Scenario: Zoom controls work
 - **WHEN** the user interacts with the zoom controls
