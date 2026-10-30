@@ -10,3 +10,6 @@
 
 ## Commands (in `apps/mobile`)
 `npm run web` · `npm run typecheck` · `npm run test:e2e`
+
+## Translations
+i18next + expo-localization (device language, fallback `en`). Strings in `src/i18n/locales/<lang>.ts`; keys are typed, so a missing key fails `npm run typecheck`. Never hard-code UI text.

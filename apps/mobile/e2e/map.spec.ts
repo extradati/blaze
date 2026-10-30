@@ -60,3 +60,41 @@ test.describe("locate button", () => {
     await expect(page.getByRole("alert")).toHaveText(/denied|Could not get/);
   });
 });
+
+test.describe("first launch", () => {
+  const hint = (page: Page) => page.getByText("Tap to see where you are");
+
+  test("does not ask for location until the button is pressed", async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as any;
+      w.geoCalls = 0;
+      for (const fn of ["getCurrentPosition", "watchPosition"] as const) {
+        const orig = navigator.geolocation[fn].bind(navigator.geolocation);
+        (navigator.geolocation as any)[fn] = (...a: any[]) => (w.geoCalls++, (orig as any)(...a));
+      }
+    });
+    await page.goto("/");
+    await expect(hint(page)).toBeVisible();
+    expect(await page.evaluate(() => (window as any).geoCalls)).toBe(0);
+    await page.getByRole("button", { name: "Show my location" }).click();
+    await expect.poll(() => page.evaluate(() => (window as any).geoCalls)).toBe(1);
+  });
+
+  test("hint closes for good with its close button", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Close hint" }).click();
+    await expect(hint(page)).toBeHidden();
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Show my location" })).toBeVisible();
+    await expect(hint(page)).toBeHidden();
+  });
+
+  test("hint closes for good after using the locate button", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Show my location" }).click();
+    await expect(hint(page)).toBeHidden();
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Show my location" })).toBeVisible();
+    await expect(hint(page)).toBeHidden();
+  });
+});
