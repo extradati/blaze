@@ -33,3 +33,30 @@ test("centers on user location when granted", async ({ page, context }) => {
   await page.goto("/");
   await tile;
 });
+
+test.describe("locate button", () => {
+  const zermatt = { longitude: 7.75, latitude: 46.02 };
+  const chamonix = { longitude: 6.87, latitude: 45.92 };
+  const button = (page: Page) => page.getByRole("button", { name: "Show my location" });
+
+  test("shows no dot until pressed, then dot and map on current position", async ({ page, context }) => {
+    await context.grantPermissions(["geolocation"]);
+    await context.setGeolocation(zermatt);
+    const start = waitForTile(page, 14, zermatt.longitude, zermatt.latitude);
+    await page.goto("/");
+    await start;
+    await expect(page.getByTestId("trek-map")).not.toHaveAttribute("data-user-location");
+
+    await context.setGeolocation(chamonix); // user walked; button must read a fresh fix
+    const moved = waitForTile(page, 16, chamonix.longitude, chamonix.latitude);
+    await button(page).click();
+    await expect(page.getByTestId("trek-map")).toHaveAttribute("data-user-location", "6.87,45.92");
+    await moved;
+  });
+
+  test("shows an error when location is denied", async ({ page }) => {
+    await page.goto("/");
+    await button(page).click();
+    await expect(page.getByRole("alert")).toHaveText(/denied|Could not get/);
+  });
+});
