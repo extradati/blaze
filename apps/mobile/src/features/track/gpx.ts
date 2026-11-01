@@ -56,12 +56,11 @@ export function parseGpx(xml: string): Track {
 export function trackGeoJSON(track: Track | null): GeoJSON.FeatureCollection {
   if (!track) return { type: "FeatureCollection", features: [] };
   const first = track.segments[0], last = track.segments.at(-1)!;
-  const point = (kind: string, c: LngLat, props = {}): GeoJSON.Feature => ({ type: "Feature", properties: { kind, ...props }, geometry: { type: "Point", coordinates: c } });
+  const point = (kind: string, c: LngLat): GeoJSON.Feature => ({ type: "Feature", properties: { kind }, geometry: { type: "Point", coordinates: c } });
   return {
     type: "FeatureCollection",
     features: [
       { type: "Feature", properties: { kind: "line" }, geometry: { type: "MultiLineString", coordinates: track.segments } },
-      ...track.waypoints.map((w) => point("wpt", w.coord, { name: w.name })),
       point("start", first[0]),
       point("end", last.at(-1)!),
     ],

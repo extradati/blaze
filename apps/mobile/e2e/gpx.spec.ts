@@ -27,7 +27,7 @@ test("rejects non-GPX and GPX without track", () => {
   expect(() => parseGpx(fixture("no-track.gpx"))).toThrow(expect.objectContaining({ reason: "empty" }));
 });
 
-test("geojson has line, waypoints, start and end", () => {
+test("geojson has line, start and end (waypoints not drawn)", () => {
   const kinds = trackGeoJSON(parseGpx(fixture("sample.gpx"))).features.map((f) => f.properties!.kind);
-  expect(kinds).toEqual(["line", "wpt", "wpt", "start", "end"]);
+  expect(kinds).toEqual(["line", "start", "end"]);
 });

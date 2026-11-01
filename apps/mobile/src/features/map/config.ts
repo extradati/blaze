@@ -12,7 +12,6 @@ export const TILE_SOURCE = {
 
 export const MAP_STYLE = {
   version: 8 as const,
-  glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf", // free font server, needed for text labels
   sources: { topo: { type: "raster" as const, ...TILE_SOURCE } },
   layers: [{ id: "topo", type: "raster" as const, source: "topo" }],
 };
@@ -38,12 +37,6 @@ export const TRACK_SOURCE = "track";
 export const TRACK_LAYERS = [
   { id: "track-casing", type: "line" as const, filter: kind("line"), layout: { "line-join": "round" as const, "line-cap": "round" as const }, paint: { "line-color": "#ffffff", "line-width": 8 } },
   { id: "track-line", type: "line" as const, filter: kind("line"), layout: { "line-join": "round" as const, "line-cap": "round" as const }, paint: { "line-color": TRACK_COLOR, "line-width": 4 } },
-  { id: "track-wpt", type: "circle" as const, filter: kind("wpt"), paint: { "circle-radius": 4, "circle-color": "#333333", "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } },
-  {
-    id: "track-wpt-label", type: "symbol" as const, filter: kind("wpt"), minzoom: 12,
-    layout: { "text-field": ["get", "name"] as any, "text-font": ["Noto Sans Regular"], "text-size": 12, "text-offset": [0, 0.9] as [number, number], "text-anchor": "top" as const, "text-optional": true },
-    paint: { "text-color": "#222222", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
-  },
   { id: "track-start", type: "circle" as const, filter: kind("start"), paint: { "circle-radius": 7, "circle-color": "#2e7d32", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } },
   { id: "track-end", type: "circle" as const, filter: kind("end"), paint: { "circle-radius": 7, "circle-color": "#c62828", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } },
 ];
