@@ -40,7 +40,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit && tsc --noEmit -p e2e",
-    "postinstall": "mkdir -p public && cp node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs public/maplibre-gl-worker.js",
+    "postinstall": "node scripts/copy-maplibre-worker.mjs",
     "test:e2e": "playwright test"
   },
   "private": true

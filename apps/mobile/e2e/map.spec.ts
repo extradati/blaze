@@ -144,6 +144,7 @@ test("map worker loads (needed to draw the location dot)", async ({ page, reques
   const res = await request.get("/maplibre-gl-worker.js");
   expect(res.ok()).toBe(true);
   expect(res.headers()["content-type"]).toMatch(/javascript/);
+  expect(await res.text()).not.toContain("sourceMappingURL"); // no 404 for a .map we don't ship
 });
 
 test.describe("GPX track", () => {

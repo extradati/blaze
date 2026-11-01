@@ -11,7 +11,7 @@ import {
 } from "./config";
 import type { TrekMapProps } from "./types";
 
-// Metro cannot bundle the worker; postinstall copies it to public/ as .js (servers like nginx
+// Metro cannot bundle the worker; postinstall (scripts/copy-maplibre-worker.mjs) copies it to public/ as .js (servers like nginx
 // serve .mjs with a non-JS MIME type, which makes the browser refuse the worker).
 setWorkerUrl("/maplibre-gl-worker.js");
 
