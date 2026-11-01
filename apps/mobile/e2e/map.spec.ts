@@ -77,7 +77,7 @@ test.describe("first launch", () => {
     await expect(hint(page)).toBeVisible();
     expect(await page.evaluate(() => (window as any).geoCalls)).toBe(0);
     await page.getByRole("button", { name: "Show my location" }).click();
-    await expect.poll(() => page.evaluate(() => (window as any).geoCalls)).toBe(1);
+    await expect.poll(() => page.evaluate(() => (window as any).geoCalls)).toBeGreaterThan(0);
   });
 
   test("hint closes for good with its close button", async ({ page }) => {
@@ -100,14 +100,16 @@ test.describe("first launch", () => {
 });
 
 test.describe("position unavailable (e.g. Mac without Wi-Fi)", () => {
-  // Fake browser geolocation: precise fixes fail with POSITION_UNAVAILABLE; coarse ones succeed if `coarseWorks`.
-  async function fakeGeo(page: Page, coarseWorks: boolean) {
-    await page.addInitScript((coarseWorks) => {
+  // Fake browser geolocation: precise fixes fail with POSITION_UNAVAILABLE (or never answer if `preciseHangs`);
+  // coarse ones succeed if `coarseWorks`.
+  async function fakeGeo(page: Page, coarseWorks: boolean, preciseHangs = false) {
+    await page.addInitScript(([coarseWorks, preciseHangs]) => {
       (navigator.geolocation as any).getCurrentPosition = (ok: PositionCallback, fail: PositionErrorCallback, o: PositionOptions) => {
+        if (o?.enableHighAccuracy && preciseHangs) return;
         if (o?.enableHighAccuracy || !coarseWorks) return fail({ code: 2, message: "unavailable", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 } as any);
         ok({ coords: { longitude: 6.87, latitude: 45.92, accuracy: 500 } } as any);
       };
-    }, coarseWorks);
+    }, [coarseWorks, preciseHangs]);
   }
 
   test("falls back to a coarse position", async ({ page }) => {
@@ -115,6 +117,13 @@ test.describe("position unavailable (e.g. Mac without Wi-Fi)", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Show my location" }).click();
     await expect(page.getByTestId("trek-map")).toHaveAttribute("data-user-location", "6.87,45.92");
+  });
+
+  test("does not wait for a precise fix that never comes", async ({ page }) => {
+    await fakeGeo(page, true, true);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Show my location" }).click();
+    await expect(page.getByTestId("trek-map")).toHaveAttribute("data-user-location", "6.87,45.92", { timeout: 5_000 });
   });
 
   test("explains when no position can be found", async ({ page }) => {

@@ -1,3 +1,4 @@
+import { preferPrecise } from "./preferPrecise";
 import { LocationDeniedError, LocationTimeoutError, LocationUnavailableError, type UserPosition } from "./types";
 
 function fix(options: PositionOptions): Promise<UserPosition> {
@@ -16,12 +17,10 @@ function fix(options: PositionOptions): Promise<UserPosition> {
 }
 
 // expo-location on web reuses a cached fix (maximumAge: Infinity), so query the browser directly.
-// Fresh precise fix first; if the device can't provide one (e.g. Mac without Wi-Fi), accept a coarse/recent one.
-export async function locate(): Promise<UserPosition> {
-  try {
-    return await fix({ enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 });
-  } catch (e) {
-    if (e instanceof LocationDeniedError) throw e;
-    return fix({ enableHighAccuracy: false, maximumAge: 5 * 60_000, timeout: 15_000 });
-  }
+// Precise and coarse/recent requests run in parallel (e.g. a Mac without Wi-Fi only gets coarse).
+export function locate(): Promise<UserPosition> {
+  return preferPrecise(
+    fix({ enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 }),
+    fix({ enableHighAccuracy: false, maximumAge: 5 * 60_000, timeout: 15_000 }),
+  );
 }
