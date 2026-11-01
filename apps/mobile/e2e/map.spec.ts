@@ -145,3 +145,55 @@ test("map worker loads (needed to draw the location dot)", async ({ page, reques
   expect(res.ok()).toBe(true);
   expect(res.headers()["content-type"]).toMatch(/javascript/);
 });
+
+test.describe("GPX track", () => {
+  const fixtures = `${__dirname}/fixtures`;
+  const map = (page: Page) => page.getByTestId("trek-map");
+  const card = (page: Page) => page.getByTestId("track-card");
+
+  async function upload(page: Page, file: string) {
+    const chooser = page.waitForEvent("filechooser");
+    await page.getByRole("button", { name: "Load GPX track" }).click();
+    await (await chooser).setFiles(`${fixtures}/${file}`);
+  }
+
+  // Any tile at zoom >= minZ around lng/lat: the map was fitted to the track.
+  function waitForTileNear(page: Page, lng: number, lat: number, minZ: number) {
+    return page.waitForResponse((res) => {
+      const m = res.url().match(TILE);
+      if (!m || +m[1] < minZ || !res.ok()) return false;
+      const t = tileAt(lng, lat, +m[1]);
+      return Math.abs(+m[2] - t.x) <= 2 && Math.abs(+m[3] - t.y) <= 2;
+    }, { timeout: 30_000 });
+  }
+
+  test("loads, fits the map, shows name and distance, survives reload, can be removed", async ({ page }) => {
+    await page.goto("/");
+    const fitted = waitForTileNear(page, 9.4, 45.93, 13);
+    await upload(page, "sample.gpx");
+    await expect(card(page)).toContainText("Rifugio Test Loop");
+    await expect(card(page)).toContainText("2.7 km");
+    await expect(map(page)).toHaveAttribute("data-track-points", "4");
+    await fitted;
+
+    const refitted = waitForTileNear(page, 9.4, 45.93, 13);
+    await page.reload();
+    await expect(card(page)).toContainText("Rifugio Test Loop");
+    await expect(map(page)).toHaveAttribute("data-track-points", "4");
+    await refitted; // reopening the app shows the saved track
+
+    await page.getByRole("button", { name: "Remove track" }).click();
+    await expect(card(page)).toBeHidden();
+    await expect(map(page)).not.toHaveAttribute("data-track-points");
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Load GPX track" })).toBeVisible();
+    await expect(card(page)).toBeHidden();
+  });
+
+  test("explains when the file has no track", async ({ page }) => {
+    await page.goto("/");
+    await upload(page, "no-track.gpx");
+    await expect(page.getByRole("alert")).toContainText("contains no track");
+    await expect(card(page)).toBeHidden();
+  });
+});

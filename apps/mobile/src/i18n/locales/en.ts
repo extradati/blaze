@@ -6,6 +6,15 @@ export const en = {
     unavailable: "Your device could not determine its position. Check that Wi-Fi or GPS is on.",
     timeout: "Finding your position took too long. Try again.",
   },
+  track: {
+    load: "Load GPX track",
+    remove: "Remove track",
+    untitled: "Untitled track",
+    distance: "{{km}} km",
+    invalid: "This file is not a valid GPX file.",
+    empty: "This GPX file contains no track or route.",
+    readFailed: "Could not read the file.",
+  },
   hint: {
     locate: "Tap to see where you are",
     close: "Close hint",

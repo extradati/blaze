@@ -24,3 +24,10 @@ export function userLocationGeoJSON(pos: UserPosition | null): GeoJSON.FeatureCo
     ],
   };
 }
+
+/** Great-circle distance in metres (haversine). */
+export function distanceM([lng1, lat1]: LngLat, [lng2, lat2]: LngLat): number {
+  const r = Math.PI / 180;
+  const a = Math.sin(((lat2 - lat1) * r) / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(((lng2 - lng1) * r) / 2) ** 2;
+  return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(a));
+}

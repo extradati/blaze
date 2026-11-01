@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 type Props = { text: string; onClose: () => void; style?: ViewStyle };
 
-/** Speech bubble with an arrow on its bottom-right, pointing at a control below it. */
+/** Speech bubble with an arrow on its right edge, pointing at a control to its right. */
 export function Hint({ text, onClose, style }: Props) {
   const { t } = useTranslation();
   return (
@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
   },
   text: { color: "white", fontSize: 15, flexShrink: 1 },
   arrow: {
-    position: "absolute", bottom: -6, right: 18, width: 12, height: 12,
+    position: "absolute", top: "50%", marginTop: -6, right: -6, width: 12, height: 12,
     backgroundColor: "#1a73e8", transform: [{ rotate: "45deg" }],
   },
 });
