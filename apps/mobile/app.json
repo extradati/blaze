@@ -32,7 +32,8 @@
           "locationWhenInUsePermission": "Blaze uses your location to show where you are on the map."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-asset"
     ],
     "scheme": "blaze"
   }

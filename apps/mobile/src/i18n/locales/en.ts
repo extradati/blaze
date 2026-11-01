@@ -10,6 +10,8 @@ export const en = {
     load: "Load GPX track",
     remove: "Remove track",
     untitled: "Untitled track",
+    start: "Start",
+    finish: "Finish",
     distance: "{{km}} km",
     invalid: "This file is not a valid GPX file.",
     empty: "This GPX file contains no track or route.",

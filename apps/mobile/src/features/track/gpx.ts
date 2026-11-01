@@ -55,14 +55,12 @@ export function parseGpx(xml: string): Track {
 
 export function trackGeoJSON(track: Track | null): GeoJSON.FeatureCollection {
   if (!track) return { type: "FeatureCollection", features: [] };
-  const first = track.segments[0], last = track.segments.at(-1)!;
-  const point = (kind: string, c: LngLat): GeoJSON.Feature => ({ type: "Feature", properties: { kind }, geometry: { type: "Point", coordinates: c } });
   return {
     type: "FeatureCollection",
-    features: [
-      { type: "Feature", properties: { kind: "line" }, geometry: { type: "MultiLineString", coordinates: track.segments } },
-      point("start", first[0]),
-      point("end", last.at(-1)!),
-    ],
+    features: [{ type: "Feature", properties: { kind: "line" }, geometry: { type: "MultiLineString", coordinates: track.segments } }],
   };
+}
+
+export function trackEnds(track: Track): { start: LngLat; finish: LngLat } {
+  return { start: track.segments[0][0], finish: track.segments.at(-1)!.at(-1)! };
 }

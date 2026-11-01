@@ -1,10 +1,13 @@
-import { type GeoJSONSource, Map as MlMap, NavigationControl, setWorkerUrl } from "maplibre-gl";
+import { Asset } from "expo-asset";
+import { type GeoJSONSource, Map as MlMap, Marker, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { userLocationGeoJSON } from "@/features/location/geo";
-import { trackGeoJSON } from "@/features/track/gpx";
+import { trackEnds, trackGeoJSON } from "@/features/track/gpx";
+import { TrackFlag } from "@/features/track/TrackFlag";
 import {
-  DEFAULT_VIEW, MAP_STYLE, TILE_SOURCE, TRACK_LAYERS, TRACK_PADDING, TRACK_SOURCE, USER_LOCATION_LAYERS, USER_LOCATION_SOURCE,
+  DEFAULT_VIEW, MAP_STYLE, TILE_SOURCE, TRACK_ARROW_IMAGE, TRACK_LAYERS, TRACK_PADDING, TRACK_SOURCE, USER_LOCATION_LAYERS, USER_LOCATION_SOURCE,
 } from "./config";
 import type { TrekMapProps } from "./types";
 
@@ -12,11 +15,20 @@ import type { TrekMapProps } from "./types";
 // serve .mjs with a non-JS MIME type, which makes the browser refuse the worker).
 setWorkerUrl("/maplibre-gl-worker.js");
 
+const ARROW_URL = Asset.fromModule(require("../../../assets/map/track-arrow.png")).uri;
+const FLAGS = ["start", "finish"] as const;
+
 export function TrekMap({ focus, userPosition, track }: TrekMapProps) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | null>(null);
   const latest = useRef({ userPosition, track });
   latest.current = { userPosition, track };
+  // Flags are React views rendered into MapLibre marker elements via portals.
+  const flagEls = useMemo(() => ({ start: document.createElement("div"), finish: document.createElement("div") }), []);
+  const markers = useMemo(() => ({
+    start: new Marker({ element: flagEls.start, anchor: "bottom" }),
+    finish: new Marker({ element: flagEls.finish, anchor: "bottom" }),
+  }), [flagEls]);
 
   useEffect(() => {
     const m = new MlMap({ container: el.current!, style: MAP_STYLE, maxZoom: TILE_SOURCE.maxzoom, ...DEFAULT_VIEW });
@@ -26,7 +38,8 @@ export function TrekMap({ focus, userPosition, track }: TrekMapProps) {
     m.on("error", (e) => {
       if ((e as { sourceId?: string }).sourceId !== "topo") console.warn("Map error", e.error);
     });
-    m.on("load", () => {
+    m.on("load", async () => {
+      m.addImage(TRACK_ARROW_IMAGE, (await m.loadImage(ARROW_URL)).data);
       m.addSource(TRACK_SOURCE, { type: "geojson", data: trackGeoJSON(latest.current.track) });
       TRACK_LAYERS.forEach((l) => m.addLayer({ ...l, source: TRACK_SOURCE }));
       m.addSource(USER_LOCATION_SOURCE, { type: "geojson", data: userLocationGeoJSON(latest.current.userPosition) });
@@ -48,15 +61,23 @@ export function TrekMap({ focus, userPosition, track }: TrekMapProps) {
 
   useEffect(() => {
     map.current?.getSource<GeoJSONSource>(TRACK_SOURCE)?.setData(trackGeoJSON(track));
-  }, [track]);
+    const ends = track && trackEnds(track);
+    for (const k of FLAGS) {
+      if (ends) markers[k].setLngLat(ends[k]).addTo(map.current!);
+      else markers[k].remove();
+    }
+  }, [track, markers]);
 
   return (
-    <div
-      ref={el}
-      data-testid="trek-map"
-      data-user-location={userPosition?.center.join(",")}
-      data-track-points={track?.segments.reduce((n, s) => n + s.length, 0)}
-      style={{ position: "absolute", inset: 0 }}
-    />
+    <>
+      {track && FLAGS.map((k) => createPortal(<TrackFlag kind={k} />, flagEls[k], k))}
+      <div
+        ref={el}
+        data-testid="trek-map"
+        data-user-location={userPosition?.center.join(",")}
+        data-track-points={track?.segments.reduce((n, s) => n + s.length, 0)}
+        style={{ position: "absolute", inset: 0 }}
+      />
+    </>
   );
 }

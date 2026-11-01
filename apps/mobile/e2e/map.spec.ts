@@ -168,13 +168,18 @@ test.describe("GPX track", () => {
   }
 
   test("loads, fits the map, shows name and distance, survives reload, can be removed", async ({ page }) => {
+    const warnings: string[] = [];
+    page.on("console", (m) => ["warning", "error"].includes(m.type()) && warnings.push(m.text()));
     await page.goto("/");
     const fitted = waitForTileNear(page, 9.4, 45.93, 13);
     await upload(page, "sample.gpx");
     await expect(card(page)).toContainText("Rifugio Test Loop");
     await expect(card(page)).toContainText("2.7 km");
     await expect(map(page)).toHaveAttribute("data-track-points", "4");
+    await expect(page.getByTestId("track-flag-start")).toBeVisible();
+    await expect(page.getByTestId("track-flag-finish")).toBeVisible();
     await fitted;
+    expect(warnings.filter((w) => /image|track-arrow/i.test(w))).toEqual([]); // arrow icon loaded
 
     const refitted = waitForTileNear(page, 9.4, 45.93, 13);
     await page.reload();
@@ -185,6 +190,7 @@ test.describe("GPX track", () => {
     await page.getByRole("button", { name: "Remove track" }).click();
     await expect(card(page)).toBeHidden();
     await expect(map(page)).not.toHaveAttribute("data-track-points");
+    await expect(page.getByTestId("track-flag-start")).toBeHidden();
     await page.reload();
     await expect(page.getByRole("button", { name: "Load GPX track" })).toBeVisible();
     await expect(card(page)).toBeHidden();

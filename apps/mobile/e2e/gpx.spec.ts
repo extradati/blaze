@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
-import { parseGpx, trackGeoJSON } from "../src/features/track/gpx";
+import { parseGpx, trackEnds, trackGeoJSON } from "../src/features/track/gpx";
 import { GpxError } from "../src/features/track/types";
 
 const fixture = (name: string) => readFileSync(`${__dirname}/fixtures/${name}`, "utf8");
@@ -27,7 +27,8 @@ test("rejects non-GPX and GPX without track", () => {
   expect(() => parseGpx(fixture("no-track.gpx"))).toThrow(expect.objectContaining({ reason: "empty" }));
 });
 
-test("geojson has line, start and end (waypoints not drawn)", () => {
-  const kinds = trackGeoJSON(parseGpx(fixture("sample.gpx"))).features.map((f) => f.properties!.kind);
-  expect(kinds).toEqual(["line", "start", "end"]);
+test("geojson is the track line only; ends are first and last points", () => {
+  const t = parseGpx(fixture("sample.gpx"));
+  expect(trackGeoJSON(t).features.map((f) => f.properties!.kind)).toEqual(["line"]);
+  expect(trackEnds(t)).toEqual({ start: [9.39, 45.92], finish: [9.41, 45.94] });
 });

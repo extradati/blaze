@@ -33,10 +33,16 @@ export const USER_LOCATION_LAYERS = [
 const kind = (k: string) => ["==", ["get", "kind"], k] as any;
 export const TRACK_COLOR = "#e6007e"; // magenta: stands out from OpenTopoMap's red trails and blue water
 export const TRACK_SOURCE = "track";
+export const TRACK_ARROW_IMAGE = "track-arrow"; // assets/map/track-arrow.png, 48px, drawn at half size
 // Order matters: later layers draw on top. Keep below USER_LOCATION_LAYERS.
 export const TRACK_LAYERS = [
   { id: "track-casing", type: "line" as const, filter: kind("line"), layout: { "line-join": "round" as const, "line-cap": "round" as const }, paint: { "line-color": "#ffffff", "line-width": 8 } },
   { id: "track-line", type: "line" as const, filter: kind("line"), layout: { "line-join": "round" as const, "line-cap": "round" as const }, paint: { "line-color": TRACK_COLOR, "line-width": 4 } },
-  { id: "track-start", type: "circle" as const, filter: kind("start"), paint: { "circle-radius": 7, "circle-color": "#2e7d32", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } },
-  { id: "track-end", type: "circle" as const, filter: kind("end"), paint: { "circle-radius": 7, "circle-color": "#c62828", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } },
+  {
+    id: "track-arrows", type: "symbol" as const, filter: kind("line"),
+    layout: {
+      "symbol-placement": "line" as const, "symbol-spacing": 150, "icon-image": TRACK_ARROW_IMAGE, "icon-size": 0.5,
+      "icon-allow-overlap": true, "icon-ignore-placement": true, "icon-rotation-alignment": "map" as const,
+    },
+  },
 ];
