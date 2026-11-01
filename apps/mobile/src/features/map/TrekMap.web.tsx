@@ -21,6 +21,11 @@ export function TrekMap({ focus, userPosition, track }: TrekMapProps) {
   useEffect(() => {
     const m = new MlMap({ container: el.current!, style: MAP_STYLE, maxZoom: TILE_SOURCE.maxzoom, ...DEFAULT_VIEW });
     m.addControl(new NavigationControl());
+    // Without a listener MapLibre console.errors every failed tile (red LogBox in dev). Broken tiles are
+    // expected (OpenTopoMap serves a few cached HTML pages as images); MapLibre keeps the lower-zoom tile there.
+    m.on("error", (e) => {
+      if ((e as { sourceId?: string }).sourceId !== "topo") console.warn("Map error", e.error);
+    });
     m.on("load", () => {
       m.addSource(TRACK_SOURCE, { type: "geojson", data: trackGeoJSON(latest.current.track) });
       TRACK_LAYERS.forEach((l) => m.addLayer({ ...l, source: TRACK_SOURCE }));

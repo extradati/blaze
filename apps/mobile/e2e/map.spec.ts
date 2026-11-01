@@ -197,3 +197,14 @@ test.describe("GPX track", () => {
     await expect(card(page)).toBeHidden();
   });
 });
+
+test("broken map tiles do not raise errors", async ({ page }) => {
+  // OpenTopoMap has served HTML pages labelled as images for some tiles.
+  await page.route(/tile\.opentopomap\.org\/7\//, (route) => route.fulfill({ status: 200, contentType: "image/jpeg", body: "<!DOCTYPE html><html></html>" }));
+  const errors: string[] = [];
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  await page.goto("/");
+  await expect(page.getByTestId("trek-map")).toBeVisible();
+  await page.waitForTimeout(3000);
+  expect(errors).toEqual([]);
+});
