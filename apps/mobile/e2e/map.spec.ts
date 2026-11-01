@@ -98,3 +98,29 @@ test.describe("first launch", () => {
     await expect(hint(page)).toBeHidden();
   });
 });
+
+test.describe("position unavailable (e.g. Mac without Wi-Fi)", () => {
+  // Fake browser geolocation: precise fixes fail with POSITION_UNAVAILABLE; coarse ones succeed if `coarseWorks`.
+  async function fakeGeo(page: Page, coarseWorks: boolean) {
+    await page.addInitScript((coarseWorks) => {
+      (navigator.geolocation as any).getCurrentPosition = (ok: PositionCallback, fail: PositionErrorCallback, o: PositionOptions) => {
+        if (o?.enableHighAccuracy || !coarseWorks) return fail({ code: 2, message: "unavailable", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 } as any);
+        ok({ coords: { longitude: 6.87, latitude: 45.92, accuracy: 500 } } as any);
+      };
+    }, coarseWorks);
+  }
+
+  test("falls back to a coarse position", async ({ page }) => {
+    await fakeGeo(page, true);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Show my location" }).click();
+    await expect(page.getByTestId("trek-map")).toHaveAttribute("data-user-location", "6.87,45.92");
+  });
+
+  test("explains when no position can be found", async ({ page }) => {
+    await fakeGeo(page, false);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Show my location" }).click();
+    await expect(page.getByRole("alert")).toContainText("could not determine its position");
+  });
+});

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 import { LocateButton } from "@/features/location/LocateButton";
 import { locate } from "@/features/location/locate";
-import { LocationDeniedError, type UserPosition } from "@/features/location/types";
+import { LocationDeniedError, LocationTimeoutError, LocationUnavailableError, type UserPosition } from "@/features/location/types";
 import { LOCATE_ZOOM, USER_ZOOM } from "@/features/map/config";
 import { TrekMap } from "@/features/map/TrekMap";
 import type { MapFocus } from "@/features/map/types";
@@ -33,7 +33,7 @@ export default function MapScreen() {
       setUserPosition(pos);
       setFocus({ center: pos.center, zoom: LOCATE_ZOOM });
     } catch (e) {
-      setError(t(e instanceof LocationDeniedError ? "location.denied" : "location.failed"));
+      setError(t(errorKey(e)));
       setTimeout(() => setError(null), 4000);
     } finally {
       setBusy(false);
@@ -57,3 +57,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.75)", color: "white",
   },
 });
+
+function errorKey(e: unknown) {
+  if (e instanceof LocationDeniedError) return "location.denied";
+  if (e instanceof LocationUnavailableError) return "location.unavailable";
+  if (e instanceof LocationTimeoutError) return "location.timeout";
+  return "location.failed";
+}
