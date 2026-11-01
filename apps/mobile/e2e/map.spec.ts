@@ -133,3 +133,15 @@ test.describe("position unavailable (e.g. Mac without Wi-Fi)", () => {
     await expect(page.getByRole("alert")).toContainText("could not determine its position");
   });
 });
+
+test("map worker loads (needed to draw the location dot)", async ({ page, request }) => {
+  const errors: string[] = [];
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  await page.goto("/");
+  await expect(page.getByTestId("trek-map")).toBeVisible();
+  await page.waitForTimeout(2000);
+  expect(errors.filter((e) => /worker/i.test(e))).toEqual([]);
+  const res = await request.get("/maplibre-gl-worker.js");
+  expect(res.ok()).toBe(true);
+  expect(res.headers()["content-type"]).toMatch(/javascript/);
+});

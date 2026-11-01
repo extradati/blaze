@@ -5,8 +5,9 @@ import { userLocationGeoJSON } from "@/features/location/geo";
 import { DEFAULT_VIEW, MAP_STYLE, TILE_SOURCE, USER_LOCATION_LAYERS, USER_LOCATION_SOURCE } from "./config";
 import type { TrekMapProps } from "./types";
 
-// Metro cannot bundle the worker; postinstall copies it to public/.
-setWorkerUrl("/maplibre-gl-worker.mjs");
+// Metro cannot bundle the worker; postinstall copies it to public/ as .js (servers like nginx
+// serve .mjs with a non-JS MIME type, which makes the browser refuse the worker).
+setWorkerUrl("/maplibre-gl-worker.js");
 
 export function TrekMap({ focus, userPosition }: TrekMapProps) {
   const el = useRef<HTMLDivElement>(null);

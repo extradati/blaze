@@ -41,6 +41,6 @@ yarn-error.*
 /android
 
 # copied from maplibre-gl on install
-/public/maplibre-gl-worker.mjs
+/public/maplibre-gl-worker.js
 /test-results
 /playwright-report
