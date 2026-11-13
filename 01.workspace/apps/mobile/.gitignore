@@ -44,3 +44,7 @@ yarn-error.*
 /public/maplibre-gl-worker.js
 /test-results
 /playwright-report
+
+# npm only (see README)
+pnpm-lock.yaml
+yarn.lock
