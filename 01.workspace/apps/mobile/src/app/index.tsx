@@ -10,6 +10,7 @@ import type { MapFocus } from "@/features/map/types";
 import { useUserCenter } from "@/features/map/useUserCenter";
 import { Hint } from "@/features/onboarding/Hint";
 import { useHint } from "@/features/onboarding/useHint";
+import { useOfflineMap } from "@/features/offline/useOfflineMap";
 import { parseGpx } from "@/features/track/gpx";
 import { pickTextFile } from "@/features/track/pickFile";
 import { TrackCard } from "@/features/track/TrackCard";
@@ -22,6 +23,7 @@ export default function MapScreen() {
   const locateHint = useHint("locate");
   const { track, ready: trackReady, save: saveTrack } = useTrack();
   // Last position from the locate button, kept across sessions. Shown grey ("stale") until a new fix in this session.
+  const offlineMap = useOfflineMap(track, trackReady);
   const lastPosition = usePersistedState<UserPosition & { savedAt?: number }>("location.last"); // savedAt: when the button was pressed (ms)
   const [freshPosition, setFreshPosition] = useState<UserPosition | null>(null);
   const userPosition = freshPosition ?? lastPosition.value;
@@ -86,7 +88,7 @@ export default function MapScreen() {
   return (
     <View style={StyleSheet.absoluteFill}>
       <TrekMap focus={focus} userPosition={userPosition} positionStale={!freshPosition && !!userPosition} track={track} />
-      {track && <TrackCard track={track} onRemove={() => saveTrack(null)} />}
+      {track && <TrackCard track={track} offline={offlineMap} onRemove={() => saveTrack(null)} />}
       <View style={styles.controls}>
         <MapButton icon="route" label={t("track.load")} onPress={onLoadTrack} busy={busy === "track"} />
         <MapButton icon="my-location" label={t("location.show")} onPress={onLocate} busy={busy === "locate"} />

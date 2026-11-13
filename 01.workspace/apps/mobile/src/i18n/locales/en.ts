@@ -17,6 +17,12 @@ export const en = {
     empty: "This GPX file contains no track or route.",
     readFailed: "Could not read the file.",
   },
+  offline: {
+    saving: "Saving map for offline use… {{percent}}%",
+    done: "Map saved for offline use",
+    paused: "No connection. Map saving resumes when online.",
+    failed: "Could not save the map for offline use",
+  },
   time: {
     justNow: "just now",
     minutes: "{{count}} min ago",

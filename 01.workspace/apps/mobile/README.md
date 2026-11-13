@@ -12,6 +12,8 @@ npx expo start --web         # open http://localhost:8081
 
 After installing or updating packages, add `-c` once to clear the bundler cache: `npx expo start --web -c`.
 
+Offline mode only works in the production build: `npm run build:web && npm run serve:web` → http://localhost:8082. Deploy the `dist/` folder.
+
 Phones: Android/iOS need a development build (MapLibre doesn't run in Expo Go).
 
 ## Checks
