@@ -4,7 +4,7 @@ import { LocationDeniedError, LocationTimeoutError, LocationUnavailableError, ty
 function fix(options: PositionOptions): Promise<UserPosition> {
   return new Promise((resolve, reject) =>
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => resolve({ center: [coords.longitude, coords.latitude], accuracy: coords.accuracy }),
+      ({ coords, timestamp }) => resolve({ center: [coords.longitude, coords.latitude], accuracy: coords.accuracy, time: timestamp }),
       (e) =>
         reject(
           e.code === e.PERMISSION_DENIED ? new LocationDeniedError(e.message)

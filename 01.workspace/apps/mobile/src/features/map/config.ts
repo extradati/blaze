@@ -27,7 +27,7 @@ export const USER_LOCATION_SOURCE = "user-location";
 export const USER_LOCATION_LAYERS = [
   { id: "user-accuracy", type: "fill" as const, filter: ["==", ["get", "kind"], "accuracy"] as any, paint: { "fill-color": "#1a73e8", "fill-opacity": 0.15 } },
   { id: "user-accuracy-edge", type: "line" as const, filter: ["==", ["get", "kind"], "accuracy"] as any, paint: { "line-color": "#1a73e8", "line-opacity": 0.4, "line-width": 1 } },
-  { id: "user-dot", type: "circle" as const, filter: ["==", ["get", "kind"], "dot"] as any, paint: { "circle-radius": 7, "circle-color": "#1a73e8", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } },
+  { id: "user-dot", type: "circle" as const, filter: ["==", ["get", "kind"], "dot"] as any, paint: { "circle-radius": 7, "circle-color": ["case", ["boolean", ["get", "stale"], false], "#616161", "#1a73e8"] as any, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } },
 ];
 
 const kind = (k: string) => ["==", ["get", "kind"], k] as any;

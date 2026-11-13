@@ -2,9 +2,10 @@ import * as Location from "expo-location";
 import { preferPrecise } from "./preferPrecise";
 import { LocationDeniedError, LocationTimeoutError, LocationUnavailableError, type UserPosition } from "./types";
 
-const toPosition = ({ coords }: Location.LocationObject): UserPosition => ({
+const toPosition = ({ coords, timestamp }: Location.LocationObject): UserPosition => ({
   center: [coords.longitude, coords.latitude],
   accuracy: coords.accuracy ?? 0,
+  time: timestamp,
 });
 
 /** One-time GPS fix. For live tracking, switch to Location.watchPositionAsync. */

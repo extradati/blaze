@@ -215,3 +215,40 @@ test("broken map tiles do not raise errors", async ({ page }) => {
   await page.waitForTimeout(3000);
   expect(errors).toEqual([]);
 });
+
+test.describe("last known position", () => {
+  const chamonix = { longitude: 6.87, latitude: 45.92 };
+  const zermatt = { longitude: 7.75, latitude: 46.02 };
+  const map = (page: Page) => page.getByTestId("trek-map");
+
+  test("is shown grey with its age after reopening, without reading location; refreshed by the button", async ({ page, context }) => {
+    await context.grantPermissions(["geolocation"]);
+    await context.setGeolocation(chamonix);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Show my location" }).click();
+    await expect(map(page)).toHaveAttribute("data-user-location", "6.87,45.92");
+    await expect(map(page)).not.toHaveAttribute("data-user-location-stale");
+    await expect(page.getByTestId("position-age")).toBeHidden();
+
+    // Reopen: count geolocation reads; the user has moved meanwhile.
+    await context.addInitScript(() => {
+      const w = window as any;
+      w.geoCalls = 0;
+      const orig = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+      (navigator.geolocation as any).getCurrentPosition = (...a: any[]) => (w.geoCalls++, (orig as any)(...a));
+    });
+    await context.setGeolocation(zermatt);
+    const centered = waitForTile(page, 16, chamonix.longitude, chamonix.latitude);
+    await page.reload();
+    await expect(map(page)).toHaveAttribute("data-user-location", "6.87,45.92");
+    await expect(map(page)).toHaveAttribute("data-user-location-stale", "true");
+    await expect(page.getByTestId("position-age")).toHaveText("just now");
+    await centered; // map opens on the saved spot
+    expect(await page.evaluate(() => (window as any).geoCalls)).toBe(0);
+
+    await page.getByRole("button", { name: "Show my location" }).click();
+    await expect(map(page)).toHaveAttribute("data-user-location", "7.75,46.02");
+    await expect(map(page)).not.toHaveAttribute("data-user-location-stale");
+    await expect(page.getByTestId("position-age")).toBeHidden();
+  });
+});

@@ -14,13 +14,16 @@ export function circleRing([lng, lat]: LngLat, radiusM: number, steps = 64): Lng
   return [...ring, ring[0]];
 }
 
-export function userLocationGeoJSON(pos: UserPosition | null): GeoJSON.FeatureCollection {
+/** Live position: dot + accuracy circle. Stale (saved) position: grey dot only. */
+export function userLocationGeoJSON(pos: UserPosition | null, stale = false): GeoJSON.FeatureCollection {
   if (!pos) return { type: "FeatureCollection", features: [] };
+  const dot: GeoJSON.Feature = { type: "Feature", properties: { kind: "dot", stale }, geometry: { type: "Point", coordinates: pos.center } };
+  if (stale) return { type: "FeatureCollection", features: [dot] };
   return {
     type: "FeatureCollection",
     features: [
       { type: "Feature", properties: { kind: "accuracy" }, geometry: { type: "Polygon", coordinates: [circleRing(pos.center, pos.accuracy)] } },
-      { type: "Feature", properties: { kind: "dot" }, geometry: { type: "Point", coordinates: pos.center } },
+      dot,
     ],
   };
 }

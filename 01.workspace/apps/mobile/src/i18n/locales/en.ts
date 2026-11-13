@@ -17,6 +17,12 @@ export const en = {
     empty: "This GPX file contains no track or route.",
     readFailed: "Could not read the file.",
   },
+  time: {
+    justNow: "just now",
+    minutes: "{{count}} min ago",
+    hours: "{{count}} h ago",
+    days: "{{count}} d ago",
+  },
   hint: {
     locate: "Tap to see where you are",
     close: "Close hint",

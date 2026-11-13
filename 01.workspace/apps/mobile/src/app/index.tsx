@@ -15,26 +15,33 @@ import { pickTextFile } from "@/features/track/pickFile";
 import { TrackCard } from "@/features/track/TrackCard";
 import { GpxError } from "@/features/track/types";
 import { useTrack } from "@/features/track/useTrack";
+import { usePersistedState } from "@/lib/usePersistedState";
 
 export default function MapScreen() {
   const { t } = useTranslation();
-  const startCenter = useUserCenter();
   const locateHint = useHint("locate");
   const { track, ready: trackReady, save: saveTrack } = useTrack();
+  // Last position from the locate button, kept across sessions. Shown grey ("stale") until a new fix in this session.
+  const lastPosition = usePersistedState<UserPosition>("location.last");
+  const [freshPosition, setFreshPosition] = useState<UserPosition | null>(null);
+  const userPosition = freshPosition ?? lastPosition.value;
+  const storageReady = trackReady && lastPosition.ready;
+  // Read live location at startup only if there's nothing saved to show (and permission was already given).
+  const startCenter = useUserCenter(storageReady && !track && !lastPosition.value);
   const [focus, setFocus] = useState<MapFocus | null>(null);
-  const [userPosition, setUserPosition] = useState<UserPosition | null>(null);
   const [busy, setBusy] = useState<"locate" | "track" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const startupDone = useRef(false);
 
-  // Startup view: a saved track wins over the user's position.
+  // Startup view: saved track, else last known position, else live position (if already allowed), else the Alps.
   useEffect(() => {
-    if (startupDone.current || !trackReady) return;
+    if (startupDone.current || !storageReady) return;
     if (track) setFocus({ bounds: track.bounds });
+    else if (lastPosition.value) setFocus({ center: lastPosition.value.center, zoom: LOCATE_ZOOM });
     else if (startCenter) setFocus({ center: startCenter, zoom: USER_ZOOM });
     else return;
     startupDone.current = true;
-  }, [trackReady, track, startCenter]);
+  }, [storageReady, track, lastPosition.value, startCenter]);
 
   function showError(msg: string) {
     setError(msg);
@@ -47,7 +54,9 @@ export default function MapScreen() {
     setError(null);
     try {
       const pos = await locate();
-      setUserPosition(pos);
+      startupDone.current = true;
+      setFreshPosition(pos);
+      lastPosition.save(pos);
       setFocus({ center: pos.center, zoom: LOCATE_ZOOM });
     } catch (e) {
       showError(t(locateErrorKey(e)));
@@ -75,7 +84,7 @@ export default function MapScreen() {
 
   return (
     <View style={StyleSheet.absoluteFill}>
-      <TrekMap focus={focus} userPosition={userPosition} track={track} />
+      <TrekMap focus={focus} userPosition={userPosition} positionStale={!freshPosition && !!userPosition} track={track} />
       {track && <TrackCard track={track} onRemove={() => saveTrack(null)} />}
       <View style={styles.controls}>
         <MapButton icon="route" label={t("track.load")} onPress={onLoadTrack} busy={busy === "track"} />

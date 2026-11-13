@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import type { LngLat } from "./config";
 
 /** User position at startup, only if permission was already granted (never prompts). */
-export function useUserCenter(): LngLat | null {
+export function useUserCenter(enabled: boolean): LngLat | null {
   const [center, setCenter] = useState<LngLat | null>(null);
   useEffect(() => {
+    if (!enabled) return;
     let alive = true;
     (async () => {
       const { granted } = await Location.getForegroundPermissionsAsync();
@@ -18,6 +19,6 @@ export function useUserCenter(): LngLat | null {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [enabled]);
   return center;
 }
