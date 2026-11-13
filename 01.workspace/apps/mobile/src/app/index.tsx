@@ -22,7 +22,7 @@ export default function MapScreen() {
   const locateHint = useHint("locate");
   const { track, ready: trackReady, save: saveTrack } = useTrack();
   // Last position from the locate button, kept across sessions. Shown grey ("stale") until a new fix in this session.
-  const lastPosition = usePersistedState<UserPosition>("location.last");
+  const lastPosition = usePersistedState<UserPosition & { savedAt?: number }>("location.last"); // savedAt: when the button was pressed (ms)
   const [freshPosition, setFreshPosition] = useState<UserPosition | null>(null);
   const userPosition = freshPosition ?? lastPosition.value;
   const storageReady = trackReady && lastPosition.ready;
@@ -33,11 +33,12 @@ export default function MapScreen() {
   const [error, setError] = useState<string | null>(null);
   const startupDone = useRef(false);
 
-  // Startup view: saved track, else last known position, else live position (if already allowed), else the Alps.
+  // Startup view: whichever was more recent of saved track / last known position, else live position (if already allowed), else the Alps.
   useEffect(() => {
     if (startupDone.current || !storageReady) return;
-    if (track) setFocus({ bounds: track.bounds });
-    else if (lastPosition.value) setFocus({ center: lastPosition.value.center, zoom: LOCATE_ZOOM });
+    const pos = lastPosition.value;
+    if (pos && (!track || (pos.savedAt ?? pos.time) > (track.loadedAt ?? 0))) setFocus({ center: pos.center, zoom: LOCATE_ZOOM });
+    else if (track) setFocus({ bounds: track.bounds });
     else if (startCenter) setFocus({ center: startCenter, zoom: USER_ZOOM });
     else return;
     startupDone.current = true;
@@ -56,7 +57,7 @@ export default function MapScreen() {
       const pos = await locate();
       startupDone.current = true;
       setFreshPosition(pos);
-      lastPosition.save(pos);
+      lastPosition.save({ ...pos, savedAt: Date.now() });
       setFocus({ center: pos.center, zoom: LOCATE_ZOOM });
     } catch (e) {
       showError(t(locateErrorKey(e)));
@@ -73,7 +74,7 @@ export default function MapScreen() {
       if (text === null) return;
       const parsed = parseGpx(text);
       startupDone.current = true;
-      saveTrack(parsed);
+      saveTrack({ ...parsed, loadedAt: Date.now() });
       setFocus({ bounds: parsed.bounds });
     } catch (e) {
       showError(t(e instanceof GpxError ? `track.${e.reason}` : "track.readFailed"));

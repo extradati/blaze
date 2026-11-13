@@ -251,4 +251,26 @@ test.describe("last known position", () => {
     await expect(map(page)).not.toHaveAttribute("data-user-location-stale");
     await expect(page.getByTestId("position-age")).toBeHidden();
   });
+
+  test("reopening shows whichever came last: track or position", async ({ page, context }) => {
+    await context.grantPermissions(["geolocation"]);
+    await context.setGeolocation(chamonix);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Show my location" }).click();
+    await expect(map(page)).toHaveAttribute("data-user-location", "6.87,45.92");
+    const chooser = page.waitForEvent("filechooser");
+    await page.getByRole("button", { name: "Load GPX track" }).click();
+    await (await chooser).setFiles(`${__dirname}/fixtures/sample.gpx`);
+    await expect(map(page)).toHaveAttribute("data-track-points", "4");
+
+    const onTrackAny = page.waitForResponse((r) => { const m = r.url().match(TILE); if (!m || +m[1] < 13) return false; const t = tileAt(9.4, 45.93, +m[1]); return Math.abs(+m[2] - t.x) <= 2 && Math.abs(+m[3] - t.y) <= 2; }, { timeout: 30_000 });
+    await page.reload();
+    await onTrackAny; // track loaded after the fix → map opens on the track
+
+    await page.getByRole("button", { name: "Show my location" }).click();
+    await expect(map(page)).not.toHaveAttribute("data-user-location-stale");
+    const onPos = waitForTile(page, 16, chamonix.longitude, chamonix.latitude);
+    await page.reload();
+    await onPos; // fix taken after the track → map opens on the position
+  });
 });
