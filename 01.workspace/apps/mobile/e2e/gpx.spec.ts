@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 import { readFileSync } from "node:fs";
 import { parseGpx, trackEnds, trackGeoJSON } from "../src/features/track/gpx";
 import { GpxError } from "../src/features/track/types";

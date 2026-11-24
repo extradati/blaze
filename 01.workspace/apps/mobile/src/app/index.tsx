@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 import { MapButton } from "@/components/MapButton";
 import { locate } from "@/features/location/locate";
+import { useFollowLocation } from "@/features/location/useFollowLocation";
 import { LocationDeniedError, LocationTimeoutError, LocationUnavailableError, type UserPosition } from "@/features/location/types";
 import { LOCATE_ZOOM, USER_ZOOM } from "@/features/map/config";
 import { TrekMap } from "@/features/map/TrekMap";
@@ -25,7 +26,8 @@ export default function MapScreen() {
   // Last position from the locate button, kept across sessions. Shown grey ("stale") until a new fix in this session.
   const offlineMap = useOfflineMap(track, trackReady);
   const lastPosition = usePersistedState<UserPosition & { savedAt?: number }>("location.last"); // savedAt: when the button was pressed (ms)
-  const [freshPosition, setFreshPosition] = useState<UserPosition | null>(null);
+  const follow = useFollowLocation(); // live position after the first press (grey saved one until then)
+  const freshPosition = follow.position;
   const userPosition = freshPosition ?? lastPosition.value;
   const storageReady = trackReady && lastPosition.ready;
   // Read live location at startup only if there's nothing saved to show (and permission was already given).
@@ -51,14 +53,24 @@ export default function MapScreen() {
     setTimeout(() => setError(null), 4000);
   }
 
+  // Save the live position now and then (it changes every second or so while walking).
+  const lastSave = useRef(0);
+  useEffect(() => {
+    if (!freshPosition || Date.now() - lastSave.current < 15_000) return;
+    lastSave.current = Date.now();
+    lastPosition.save({ ...freshPosition, savedAt: Date.now() });
+  }, [freshPosition]);
+
   async function onLocate() {
     locateHint.dismiss();
+    if (follow.following && freshPosition) return setFocus({ center: freshPosition.center, zoom: LOCATE_ZOOM }); // already live: just recenter
     setBusy("locate");
     setError(null);
     try {
       const pos = await locate();
       startupDone.current = true;
-      setFreshPosition(pos);
+      follow.start(pos);
+      lastSave.current = Date.now();
       lastPosition.save({ ...pos, savedAt: Date.now() });
       setFocus({ center: pos.center, zoom: LOCATE_ZOOM });
     } catch (e) {

@@ -27,7 +27,7 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
   const tile = req.url.match(TILE);
-  if (tile) return e.respondWith(caches.open(TILES).then((c) => c.match(`https://tile.opentopomap.org/${tile[1]}`)).then((hit) => hit || fetch(req)));
+  if (tile) return e.respondWith(caches.match(`https://tile.opentopomap.org/${tile[1]}`, { cacheName: TILES }).then((hit) => hit || fetch(req)));
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
   if (url.pathname.startsWith("/_expo/static/")) return e.respondWith(cacheFirst(req));

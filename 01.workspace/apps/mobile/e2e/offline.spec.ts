@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 import { stripTiles } from "../src/features/offline/area";
 import { parseGpx } from "../src/features/track/gpx";
 import { readFileSync } from "node:fs";

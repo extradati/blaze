@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 import { preferPrecise } from "../src/features/location/preferPrecise";
 import { LocationDeniedError, LocationTimeoutError, LocationUnavailableError } from "../src/features/location/types";
 

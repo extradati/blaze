@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 import { timeAgo } from "../src/lib/timeAgo";
 
 const MIN = 60_000;

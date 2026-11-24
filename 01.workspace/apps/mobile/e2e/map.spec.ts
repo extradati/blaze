@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./test";
 
 const TILE = /tile\.opentopomap\.org\/(\d+)\/(\d+)\/(\d+)\.png/;
 // 256px raster tiles are fetched one zoom level above the map zoom.
@@ -52,6 +52,46 @@ test.describe("locate button", () => {
     await button(page).click();
     await expect(page.getByTestId("trek-map")).toHaveAttribute("data-user-location", "6.87,45.92");
     await moved;
+  });
+
+  test("after the first press the dot follows the user; pressing again recenters without a new request", async ({ page, context }) => {
+    await page.addInitScript(() => {
+      const w = window as any, g = navigator.geolocation as any;
+      w.calls = { get: 0, watch: 0, clear: 0 };
+      const get = g.getCurrentPosition.bind(g), watch = g.watchPosition.bind(g), clear = g.clearWatch.bind(g);
+      g.getCurrentPosition = (...a: any[]) => (w.calls.get++, get(...a));
+      g.watchPosition = (...a: any[]) => (w.calls.watch++, watch(...a));
+      g.clearWatch = (...a: any[]) => (w.calls.clear++, clear(...a));
+    });
+    const calls = () => page.evaluate(() => (window as any).calls);
+    await context.grantPermissions(["geolocation"]);
+    await context.setGeolocation(chamonix);
+    await page.goto("/");
+    await button(page).click();
+    await expect(page.getByTestId("trek-map")).toHaveAttribute("data-user-location", "6.87,45.92");
+    await expect.poll(async () => (await calls()).watch).toBe(1);
+
+    await context.setGeolocation(zermatt); // walking: no press needed
+    await expect(page.getByTestId("trek-map")).toHaveAttribute("data-user-location", "7.75,46.02");
+
+    const gets = (await calls()).get;
+    const centered = waitForTile(page, 16, zermatt.longitude, zermatt.latitude);
+    await page.mouse.move(640, 360);
+    await page.mouse.wheel(0, 2000); // user zoomed out / moved the map
+    await button(page).click();
+    await centered;
+    expect((await calls()).get).toBe(gets);
+
+    // App in background: GPS off; back in front: on again.
+    const setHidden = (hidden: boolean) => page.evaluate((hidden) => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, get: () => (hidden ? "hidden" : "visible") });
+      Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });
+      document.dispatchEvent(new Event("visibilitychange"));
+    }, hidden);
+    await setHidden(true);
+    await expect.poll(async () => (await calls()).clear).toBe(1);
+    await setHidden(false);
+    await expect.poll(async () => (await calls()).watch).toBe(2);
   });
 
   test("shows an error when location is denied", async ({ page }) => {
